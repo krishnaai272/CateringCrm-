@@ -16,4 +16,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 # This will copy your 'app' folder, 'alembic' folder, etc., into /app
 COPY . .
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "1000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "10000"]
