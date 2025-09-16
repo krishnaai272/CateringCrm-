@@ -15,3 +15,6 @@ pandas
 apscheduler
 pytest
 plotly
+pydantic-settings
+asyncpg 
+aiosqlite
