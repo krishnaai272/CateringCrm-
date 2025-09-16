@@ -16,7 +16,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 # This will copy your 'app' folder, 'alembic' folder, etc., into /app
 COPY . .
 
-# THIS IS THE CORRECTED COMMAND
-# It exactly matches what you run locally: "app.main:app"
-# It also uses the port Render prefers.
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "10000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "1000"]
