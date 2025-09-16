@@ -18,3 +18,4 @@ plotly
 pydantic-settings
 asyncpg 
 aiosqlite
+
