@@ -16,6 +16,7 @@ from .auth import get_password_hash
 from .db import async_session
 from sqlalchemy import select
 import os
+from sqlalchemy import text
 
 # -------------------------
 # Create tables (async)
@@ -55,38 +56,37 @@ app.include_router(v1.router, prefix="/api/v1", tags=["Leads"])
 
 @app.on_event("startup")
 async def on_startup():
-    print("Running database migrations on startup...")
-    
-    # The app is at /app/backend/app, the ini is at /app/alembic.ini
-    alembic_ini_path = "alembic.ini" 
-    
-    alembic_cfg = Config(alembic_ini_path)
-    command.upgrade(alembic_cfg, "head")
-    print("Database migrations complete.")
-
-    # --- 2. CREATE ADMIN USER (IF NOT EXISTS) ---
-    print("Checking for admin user...")
+    # Migrations are now handled by the Build Command on Render.
+    # This startup event will only create the admin user.
+    print("Application startup complete. Checking for admin user...")
     async with async_session() as session:
         async with session.begin():
-            stmt = select(User).where(User.username == "admin")
-            result = await session.execute(stmt)
-            existing_user = result.scalars().first()
+            # Use a simple text query to avoid model dependency issues during startup
+            stmt = text("SELECT username FROM users WHERE username = :username")
+            result = await session.execute(stmt, {"username": "admin"})
+            existing_user = result.fetchone()
 
             if not existing_user:
                 print("Admin user not found, creating one...")
                 hashed_password = get_password_hash("admin123")
-                new_admin = User(
-                    username="admin",
-                    password_hash=hashed_password,
-                    full_name="Admin User",
-                    role="Admin"
+                # Direct insert to avoid complex model validation
+                insert_stmt = text(
+                    "INSERT INTO users (username, password_hash, full_name, role, created_at) "
+                    "VALUES (:username, :password_hash, :full_name, :role, NOW())"
                 )
-                session.add(new_admin)
+                await session.execute(
+                    insert_stmt,
+                    {
+                        "username": "admin",
+                        "password_hash": hashed_password,
+                        "full_name": "Admin User",
+                        "role": "Admin",
+                    },
+                )
                 await session.commit()
                 print("Admin user created successfully!")
             else:
                 print("Admin user already exists.")
-
 
 
 # -------------------------
