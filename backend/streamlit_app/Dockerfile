@@ -1,13 +1,15 @@
 FROM python:3.11-slim
 
-# The working directory inside the container
 WORKDIR /app
 
-# Copy all files from the current folder (the 'backend' folder) into the container's /app folder
-COPY . .
+# Copy the backend requirements file
+COPY backend/requirements.txt /app/
 
-# Install dependencies from the copied requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+# Install the backend dependencies
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
-# This command will run alembic and then start the server
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "10000"]
+# Copy the entire backend folder into the container
+COPY backend/ /app/
+
+# This is the command that will run when the container starts
+CMD ["sh", "-c", "alembic -c alembic.ini upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 10000 --app-dir /app/"]
