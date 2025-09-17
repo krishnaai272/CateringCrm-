@@ -48,4 +48,5 @@ async def create_admin_user():
             print("="*40 + "\n")
 
 if __name__ == "__main__":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     asyncio.run(create_admin_user())
