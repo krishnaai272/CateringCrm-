@@ -58,16 +58,8 @@ async def on_startup():
     # --- 1. RUN DATABASE MIGRATIONS ---
     print("Running database migrations on startup...")
     
-    # This creates a robust path to alembic.ini, no matter where the script is run from.
-    # It assumes alembic.ini is in the project root, one level above the 'backend' folder.
-    alembic_ini_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'alembic.ini'))
-    
-    alembic_cfg = Config(alembic_ini_path)
-    
-    # We also need to tell alembic where the script folder is, relative to the .ini file
-    # This is now redundant if script_location is correct in the .ini file, but it makes it foolproof.
-    # alembic_cfg.set_main_option('script_location', 'backend/alembic')
-
+    # Now that alembic.ini is in the same directory as the code, the path is simple.
+    alembic_cfg = Config("alembic.ini")
     command.upgrade(alembic_cfg, "head")
     print("Database migrations complete.")
 
