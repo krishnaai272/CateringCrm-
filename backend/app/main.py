@@ -15,6 +15,7 @@ from .models import User
 from .auth import get_password_hash
 from .db import async_session
 from sqlalchemy import select
+import os
 
 # -------------------------
 # Create tables (async)
@@ -55,16 +56,22 @@ app.include_router(v1.router, prefix="/api/v1", tags=["Leads"])
 @app.on_event("startup")
 async def on_startup():
     # --- 1. RUN DATABASE MIGRATIONS ---
-    # This ensures your tables are created/updated every time the app starts.
     print("Running database migrations on startup...")
-    # Note: This assumes your alembic.ini file is in the project root, one level above the 'backend' folder.
-    # If Render runs from the 'backend' folder, this path might need to be '../alembic.ini'
-    alembic_cfg = Config("alembic.ini")
+    
+    # This creates a robust path to alembic.ini, no matter where the script is run from.
+    # It assumes alembic.ini is in the project root, one level above the 'backend' folder.
+    alembic_ini_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'alembic.ini'))
+    
+    alembic_cfg = Config(alembic_ini_path)
+    
+    # We also need to tell alembic where the script folder is, relative to the .ini file
+    # This is now redundant if script_location is correct in the .ini file, but it makes it foolproof.
+    # alembic_cfg.set_main_option('script_location', 'backend/alembic')
+
     command.upgrade(alembic_cfg, "head")
     print("Database migrations complete.")
 
     # --- 2. CREATE ADMIN USER (IF NOT EXISTS) ---
-    # This checks for and creates the default admin user.
     print("Checking for admin user...")
     async with async_session() as session:
         async with session.begin():
