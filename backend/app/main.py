@@ -58,8 +58,12 @@ async def on_startup():
     # --- 1. RUN DATABASE MIGRATIONS ---
     print("Running database migrations on startup...")
     
-    # Now that alembic.ini is in the same directory as the code, the path is simple.
-    alembic_cfg = Config("alembic.ini")
+    # Get the directory where main.py is located
+    # This is the most reliable way to find the config file
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    alembic_ini_path = os.path.join(current_dir, "alembic.ini")
+    
+    alembic_cfg = Config(alembic_ini_path)
     command.upgrade(alembic_cfg, "head")
     print("Database migrations complete.")
 
@@ -85,7 +89,6 @@ async def on_startup():
                 print("Admin user created successfully!")
             else:
                 print("Admin user already exists.")
-
 
 
 
