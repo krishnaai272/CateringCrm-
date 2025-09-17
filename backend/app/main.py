@@ -57,15 +57,15 @@ app.include_router(v1.router, prefix="/api/v1", tags=["Leads"])
 @app.on_event("startup")
 async def on_startup():
     # --- 1. RUN DATABASE MIGRATIONS ---
-    print("Running database migrations on startup...")
+    #rint("Running database migrations on startup...")
     
     # Get the directory where main.py is located
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    alembic_ini_path = os.path.join(current_dir, "alembic.ini")
+   #current_dir = os.path.dirname(os.path.abspath(__file__))
+   #alembic_ini_path = os.path.join(current_dir, "alembic.ini")
     
-    alembic_cfg = Config(alembic_ini_path)
-    command.upgrade(alembic_cfg, "head")
-    print("Database migrations complete.")
+   #alembic_cfg = Config(alembic_ini_path)
+   #command.upgrade(alembic_cfg, "head")
+   #print("Database migrations complete.")
 
     # --- 2. CREATE ADMIN USER (IF NOT EXISTS) ---
     print("Checking for admin user...")
