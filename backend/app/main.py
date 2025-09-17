@@ -55,13 +55,10 @@ app.include_router(v1.router, prefix="/api/v1", tags=["Leads"])
 
 @app.on_event("startup")
 async def on_startup():
-    # --- 1. RUN DATABASE MIGRATIONS ---
     print("Running database migrations on startup...")
     
-    # Get the directory where main.py is located
-    # This is the most reliable way to find the config file
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    alembic_ini_path = os.path.join(current_dir, "alembic.ini")
+    # The app is at /app/backend/app, the ini is at /app/alembic.ini
+    alembic_ini_path = "alembic.ini" 
     
     alembic_cfg = Config(alembic_ini_path)
     command.upgrade(alembic_cfg, "head")
