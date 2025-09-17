@@ -5,10 +5,16 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from fastapi.responses import JSONResponse
 import asyncio
+from alembic.config import Config
+from alembic import command
 
 from .config import settings
 from .db import engine, Base
 from .api import v1  # Import your API router
+from .models import User
+from .auth import get_password_hash
+from .db import async_session
+from sqlalchemy import select
 
 # -------------------------
 # Create tables (async)
@@ -45,6 +51,44 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
 
 # Include API router
 app.include_router(v1.router, prefix="/api/v1", tags=["Leads"])
+
+@app.on_event("startup")
+async def on_startup():
+    # --- 1. RUN DATABASE MIGRATIONS ---
+    # This ensures your tables are created/updated every time the app starts.
+    print("Running database migrations on startup...")
+    # Note: This assumes your alembic.ini file is in the project root, one level above the 'backend' folder.
+    # If Render runs from the 'backend' folder, this path might need to be '../alembic.ini'
+    alembic_cfg = Config("alembic.ini")
+    command.upgrade(alembic_cfg, "head")
+    print("Database migrations complete.")
+
+    # --- 2. CREATE ADMIN USER (IF NOT EXISTS) ---
+    # This checks for and creates the default admin user.
+    print("Checking for admin user...")
+    async with async_session() as session:
+        async with session.begin():
+            stmt = select(User).where(User.username == "admin")
+            result = await session.execute(stmt)
+            existing_user = result.scalars().first()
+
+            if not existing_user:
+                print("Admin user not found, creating one...")
+                hashed_password = get_password_hash("admin123")
+                new_admin = User(
+                    username="admin",
+                    password_hash=hashed_password,
+                    full_name="Admin User",
+                    role="Admin"
+                )
+                session.add(new_admin)
+                await session.commit()
+                print("Admin user created successfully!")
+            else:
+                print("Admin user already exists.")
+
+
+
 
 # -------------------------
 # Startup event
