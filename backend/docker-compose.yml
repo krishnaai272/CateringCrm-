@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  backend:
+    build: .
+    container_name: catercrm-backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql://catering_crm_db_user:89fugxM7Yc33lBsL9kGD610ukBNGoDrI@dpg-d34o27er433s7387bmd0-a.oregon-postgres.render.com/catering_crm_db
+    volumes:
+      - ./backend:/app
+
+  db:
+    image: postgres:15
+    container_name: catercrm-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: catercrm
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

@@ -16,4 +16,4 @@ COPY ./backend /app/backend
 COPY ./alembic.ini /app/alembic.ini
 
 # The command to run your application from the 'backend' subfolder
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "10000", "--app-dir", "/app/backend"]
+CMD ["sh", "-c", "alembic -c alembic.ini upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 10000"]
