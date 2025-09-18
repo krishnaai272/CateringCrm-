@@ -9,6 +9,12 @@ COPY . .
 # Install dependencies from the copied requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy the entire backend folder into the container
+COPY backend/ /app/backend/
+
+# Copy the alembic.ini file into the container
+COPY alembic.ini /app/alembic.ini
+
 # --- THIS IS THE CRITICAL FIX ---
 # Add the current directory (/app) to Python's search path.
 # This guarantees that 'from app.models' will work inside Alembic.
