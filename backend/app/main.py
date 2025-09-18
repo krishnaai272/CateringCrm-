@@ -19,6 +19,10 @@ from .db import async_session
 from sqlalchemy import select
 import os
 from sqlalchemy import text
+from sqlalchemy import select
+from .db import engine, Base, async_session
+from .models import User
+from .auth import get_password_hash
 
 # -------------------------
 # Create tables (async)
@@ -58,35 +62,40 @@ app.include_router(v1.router, prefix="/api/v1", tags=["Leads"])
 
 @app.on_event("startup")
 async def on_startup():
-    # --- 1. CREATE ALL TABLES ---
-    print("--- Creating database tables ---")
+    # --- STEP 1: CREATE ALL DATABASE TABLES ---
+    # This command looks at all your models (User, Lead, etc.) and creates the
+    # tables if they don't already exist. It is safe to run every time.
+    print("--- Creating database tables (if they don't exist)... ---")
     async with engine.begin() as conn:
-        # This command looks at your models and creates all tables that don't exist.
         await conn.run_sync(Base.metadata.create_all)
-    print("✅ Database tables created successfully.")
+    print("--- Tables are ready. ---")
 
-    # --- 2. CREATE ADMIN USER (IF NOT EXISTS) ---
-    print("--- Checking for admin user ---")
+    # --- STEP 2: CREATE THE ADMIN USER (IF IT DOESN'T EXIST) ---
+    # This is the logic from your create_user.py script, now running automatically.
+    print("--- Checking for admin user... ---")
     async with async_session() as session:
         async with session.begin():
-            stmt = text("SELECT username FROM users WHERE username = :username")
-            result = await session.execute(stmt, {"username": "admin"})
-            existing_user = result.fetchone()
+            # Check if the user already exists
+            stmt = select(User).where(User.username == "admin")
+            result = await session.execute(stmt)
+            existing_user = result.scalars().first()
 
-            if not existing_user:
-                print("Admin user not found, creating one...")
-                hashed_password = get_password_hash("admin123")
-                new_admin = User(
-                    username="admin",
-                    password_hash=hashed_password,
-                    full_name="Admin User",
-                    role="Admin"
-                )
-                session.add(new_admin)
-                await session.commit()
-                print("✅ Admin user created successfully!")
-            else:
-                print("✅ Admin user already exists.")
+            if existing_user:
+                print("--- Admin user already exists. No action taken. ---")
+                return
+
+            # If not, create the new user
+            print("--- Admin user not found, creating one... ---")
+            hashed_password = get_password_hash("admin123")
+            new_admin_user = User(
+                username="admin",
+                password_hash=hashed_password,
+                full_name="Admin User",
+                role="Admin",
+            )
+            session.add(new_admin_user)
+            await session.commit()
+            print("--- Admin user created successfully! ---")
 
 # -------------------------
 # Startup event
