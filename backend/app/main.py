@@ -7,6 +7,8 @@ from fastapi.responses import JSONResponse
 import asyncio
 from alembic.config import Config
 from alembic import command
+import subprocess
+from sqlalchemy import text # Use text for robustness
 
 from .config import settings
 from .db import engine, Base
@@ -56,42 +58,48 @@ app.include_router(v1.router, prefix="/api/v1", tags=["Leads"])
 
 @app.on_event("startup")
 async def on_startup():
-    # --- 1. RUN DATABASE MIGRATIONS ---
-    print("Running database migrations on startup...")
-    
-    # This creates a foolproof path to the alembic.ini file.
-    # It assumes this main.py file is at /backend/app/main.py
-    # and alembic.ini is at /backend/alembic.ini
-    #ni_path = os.path.join(os.path.dirname(__file__), '..', 'alembic.ini')
-    
-    #lembic_cfg = Config(ini_path)
-    #ommand.upgrade(alembic_cfg, "head")
-    #rint("Database migrations complete.")
+    # --- 1. RUN DATABASE MIGRATIONS AS A SUBPROCESS ---
+    print("--- Running database migrations ---")
+    # This calls alembic in a separate process, which is more stable
+    # It assumes alembic.ini is in the parent directory (/app)
+    result = subprocess.run(["alembic", "upgrade", "head"], capture_output=True, text=True)
+    if result.returncode != 0:
+        print("🔴 MIGRATION FAILED:")
+        print(result.stdout)
+        print(result.stderr)
+        # We might want to raise an exception here to stop the app from starting
+        raise Exception("Could not apply database migrations.")
+    print("✅ Database migrations complete.")
+    print(result.stdout)
 
     # --- 2. CREATE ADMIN USER (IF NOT EXISTS) ---
-    print("Checking for admin user...")
+    print("--- Checking for admin user ---")
     async with async_session() as session:
-        # ... (The rest of the create_admin_user logic is correct and remains the same)
         async with session.begin():
-            stmt = select(User).where(User.username == "admin")
-            result = await session.execute(stmt)
-            existing_user = result.scalars().first()
+            stmt = text("SELECT username FROM users WHERE username = :username")
+            result = await session.execute(stmt, {"username": "admin"})
+            existing_user = result.fetchone()
 
             if not existing_user:
                 print("Admin user not found, creating one...")
                 hashed_password = get_password_hash("admin123")
-                new_admin = User(
-                    username="admin",
-                    password_hash=hashed_password,
-                    full_name="Admin User",
-                    role="Admin"
+                insert_stmt = text(
+                    "INSERT INTO users (username, password_hash, full_name, role, created_at) "
+                    "VALUES (:username, :password_hash, :full_name, :role, NOW())"
                 )
-                session.add(new_admin)
+                await session.execute(
+                    insert_stmt,
+                    {
+                        "username": "admin",
+                        "password_hash": hashed_password,
+                        "full_name": "Admin User",
+                        "role": "Admin",
+                    },
+                )
                 await session.commit()
-                print("Admin user created successfully!")
+                print("✅ Admin user created successfully!")
             else:
-                print("Admin user already exists.")
-
+                print("✅ Admin user already exists.")
 
 # -------------------------
 # Startup event
