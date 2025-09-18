@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from typing import List
 
 class Settings(BaseSettings):
     # These are the variables your app needs.
@@ -8,6 +9,8 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ALGORITHM: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
+
+    ALLOWED_ORIGINS: List[str] = ["*"]
 
     class Config:
         # This tells pydantic to look for a .env file.
