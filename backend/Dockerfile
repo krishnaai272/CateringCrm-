@@ -15,4 +15,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 ENV PYTHONPATH="${PYTHONPATH}:/app"
 
 # This command will run alembic and then start the server
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 10000"]
+CMD ["sh", "-c", "alembic -c /app/alembic.ini upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 10000 --app-dir /app"]
