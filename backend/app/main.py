@@ -1,30 +1,22 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import select, text
+from fastapi import FastAPI, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import text
+from .db import get_db
 
-# --- These are the only imports needed for startup ---
-from .db import engine, Base, async_session
-from .models import User
-from .auth import get_password_hash
-from .config import settings
-from .api import v1
+app = FastAPI(title="Database Connection Test")
 
-# -------------------------
-# FastAPI app
-# -------------------------
-app = FastAPI(title="Coimbatore Caterers CRM", version="1.0.0")
-
-# CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Include API router
-app.include_router(v1.router, prefix="/api/v1")
+@app.get("/")
+async def root(db: AsyncSession = Depends(get_db)):
+    try:
+        # A simple query to test the connection and see if tables exist
+        print("--- Testing database connection and querying for 'users' table ---")
+        result = await db.execute(text("SELECT 1 FROM users LIMIT 1"))
+        print("--- Query successful! 'users' table exists. ---")
+        return {"database_connection": "successful", "users_table": "found"}
+    except Exception as e:
+        print(f"🔴 ERROR: Query failed. The 'users' table likely does not exist.")
+        print(e)
+        return {"database_connection": "successful", "users_table": "NOT found", "error": str(e)}
 
 
 # -------------------------
