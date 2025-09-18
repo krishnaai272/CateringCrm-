@@ -34,10 +34,7 @@ app.include_router(v1.router, prefix="/api/v1")
 async def on_startup():
     print("--- Initializing database on startup ---")
     
-    # We will perform all setup in a single connection and transaction
-    # to guarantee the order of operations.
     async with engine.begin() as conn:
-        
         # --- STEP 1: CREATE ALL TABLES ---
         # This command is run first, inside the transaction.
         print("Creating database tables (if they don't exist)...")
@@ -45,11 +42,11 @@ async def on_startup():
         print("Tables are ready.")
         
         # --- STEP 2: CREATE THE ADMIN USER (IF IT DOESN'T EXIST) ---
-        # This command runs second, inside the SAME transaction.
-        # It uses the same raw connection 'conn' to ensure it happens after create_all.
+        # This command is run second, inside the same transaction.
+        # It uses the raw connection 'conn' to ensure it happens after create_all.
         print("Checking for admin user...")
         
-        # We use the connection to check if the user exists
+        # We use a raw text query to check for the user
         result = await conn.execute(
             select(User).where(User.username == "admin")
         )
@@ -59,7 +56,7 @@ async def on_startup():
             print("Admin user not found, creating one...")
             hashed_password = get_password_hash("admin123")
             
-            # We use the connection to insert the new user
+            # We use a direct insert on the connection
             await conn.execute(
                 User.__table__.insert().values(
                     username="admin",
