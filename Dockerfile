@@ -1,15 +1,18 @@
 FROM python:3.11-slim
 
-# The working directory inside the container
 WORKDIR /app
 
-# Copy ALL files from the build context (the 'backend' folder) into the container's /app folder
-COPY . .
+# --- THIS IS THE FIX ---
+# Instead of 'COPY . .', we will copy each item individually.
+# This guarantees that the necessary folders are included.
+COPY ./requirements.txt /app/
+COPY ./alembic.ini /app/
+COPY ./alembic /app/alembic/
+COPY ./app /app/app/
 
 # Install dependencies from the copied requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# --- THIS IS THE CRITICAL DEBUGGING COMMAND ---
-# It will first print a detailed, recursive list of ALL files and folders in the /app directory.
-# Then, it will attempt to run our original command.
-CMD ["sh", "-c", "echo '--- Listing contents of /app directory ---'; ls -laR /app; echo '--- Attempting to run migrations ---'; alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 10000"]
+# This command will run when the container starts.
+# It uses absolute paths to be foolproof.
+CMD ["sh", "-c", "alembic -c /app/alembic.ini upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 10000 --app-dir /app"]
