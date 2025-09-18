@@ -34,19 +34,24 @@ app.include_router(v1.router, prefix="/api/v1")
 async def on_startup():
     print("--- Initializing database on startup ---")
     
+    # We will perform all setup in a single connection and transaction
+    # to guarantee the order of operations.
     async with engine.begin() as conn:
-        # --- STEP 1: CREATE ALL TABLES ---
-        # This command is run first, inside the transaction.
+        
+        # --- STEP 1: FORCE CREATE ALL TABLES ---
+        # This command is a direct, built-in SQLAlchemy function.
+        # It inspects your models (User, Lead, etc.) and issues the
+        # CREATE TABLE IF NOT EXISTS commands.
         print("Creating database tables (if they don't exist)...")
         await conn.run_sync(Base.metadata.create_all)
         print("Tables are ready.")
         
         # --- STEP 2: CREATE THE ADMIN USER (IF IT DOESN'T EXIST) ---
-        # This command is run second, inside the same transaction.
-        # It uses the raw connection 'conn' to ensure it happens after create_all.
+        # This command runs second, inside the SAME transaction.
         print("Checking for admin user...")
         
-        # We use a raw text query to check for the user
+        # We use the connection to check if the user exists.
+        # This is guaranteed to run after the tables are created.
         result = await conn.execute(
             select(User).where(User.username == "admin")
         )
@@ -56,7 +61,7 @@ async def on_startup():
             print("Admin user not found, creating one...")
             hashed_password = get_password_hash("admin123")
             
-            # We use a direct insert on the connection
+            # We use the connection to insert the new user
             await conn.execute(
                 User.__table__.insert().values(
                     username="admin",
