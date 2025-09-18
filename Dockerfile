@@ -9,10 +9,7 @@ COPY . .
 # Install dependencies from the copied requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# --- THIS IS THE CRITICAL FIX ---
-# Add the current directory (/app) to Python's search path.
-# This guarantees that 'from app.models' will work.
-ENV PYTHONPATH="${PYTHONPATH}:/app"
-
-# This command will run alembic and then start the server
+# This is the command that runs when the container starts.
+# It runs alembic first, and then starts the server.
+# Because the WORKDIR is /app, it will find alembic.ini correctly.
 CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 10000"]

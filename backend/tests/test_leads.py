@@ -54,11 +54,6 @@ def test_delete_lead(sample_lead):
     assert response.status_code == 200
     assert response.json()["message"] == "Lead deleted successfully"
 
-def delete_lead(lead_id):
-    """Finds a lead by its ID and removes it from the in-memory list."""
-    lead_to_delete = next((l for l in st.session_state.leads if l['id'] == lead_id), None)
-    
-    if lead_to_delete:
-        st.session_state.leads.remove(lead_to_delete)
-        st.toast(f"Lead '{lead_to_delete['name']}' has been deleted.", icon="🗑️")
-        st.rerun()
+
+
+
