@@ -1,113 +1,78 @@
-from sqlalchemy import Column, Integer, String, Date, DateTime, Text, ForeignKey, JSON, Index
-from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship, declarative_base
-from .db import Base
+from datetime import date, datetime
+from typing import Optional
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import String, Integer, DateTime, Date, Text, ForeignKey
+from .db import Base  # your DeclarativeBase
 
+# -------------------------
+# Token ORM
+# -------------------------
+class Token(Base):
+    __tablename__ = "tokens"
 
+    id: Mapped[int] = mapped_column(primary_key=True)
+    access_token: Mapped[str] = mapped_column(String(255))
 
 
 # -------------------------
-# User Model
+# User ORM
 # -------------------------
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String(150), unique=True, nullable=False, index=True)
-    password_hash = Column(String(255), nullable=False)
-    full_name = Column(String(255))
-    role = Column(String(50), default="Staff")
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-    # Relationships
-    leads = relationship("Lead", back_populates="creator", cascade="all, delete")
-    activities = relationship("Activity", back_populates="user", cascade="all, delete")
-    followups = relationship("FollowUp", back_populates="user", cascade="all, delete")
-    audit_logs = relationship("AuditLog", back_populates="user", cascade="all, delete")
+    id: Mapped[int] = mapped_column(primary_key=True)
+    username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    full_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    role: Mapped[Optional[str]] = mapped_column(String(50), default="Staff")
+    password: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
 # -------------------------
-# Lead Model
+# Lead ORM
 # -------------------------
 class Lead(Base):
     __tablename__ = "leads"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255), nullable=False)
-    phone = Column(String(64), unique=True, nullable=False, index=True)
-    email = Column(String(255))
-    event_type = Column(String(50))
-    guests_count = Column(Integer)
-    event_date = Column(Date)
-    venue = Column(String(255))
-    notes = Column(Text)
-    stage = Column(String(50), default="New", index=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-    created_by = Column(Integer, ForeignKey("users.id"))
-
-    # Relationships
-    creator = relationship("User", back_populates="leads")
-    activities = relationship("Activity", back_populates="lead", cascade="all, delete")
-    followups = relationship("FollowUp", back_populates="lead", cascade="all, delete")
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    phone: Mapped[str] = mapped_column(String(20), nullable=False)
+    email: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    event_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    guests_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    event_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    venue: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    stage: Mapped[str] = mapped_column(String(50), default="New")
+    created_by: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
 
 # -------------------------
-# Activity Model
+# Activity ORM
 # -------------------------
 class Activity(Base):
     __tablename__ = "activities"
 
-    id = Column(Integer, primary_key=True, index=True)
-    lead_id = Column(Integer, ForeignKey("leads.id"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    type = Column(String(50))
-    content = Column(Text)
-    timestamp = Column(DateTime(timezone=True), server_default=func.now())
-
-    # Relationships
-    lead = relationship("Lead", back_populates="activities")
-    user = relationship("User", back_populates="activities")
+    id: Mapped[int] = mapped_column(primary_key=True)
+    type: Mapped[str] = mapped_column(String(50), nullable=False)
+    content: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    lead_id: Mapped[int] = mapped_column(ForeignKey("leads.id"), nullable=False)
+    user_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
 # -------------------------
-# FollowUp Model
+# FollowUp ORM
 # -------------------------
 class FollowUp(Base):
     __tablename__ = "followups"
 
-    id = Column(Integer, primary_key=True, index=True)
-    lead_id = Column(Integer, ForeignKey("leads.id"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    scheduled_at = Column(DateTime(timezone=True))
-    note = Column(Text)
-    status = Column(String(20), default="pending")  # pending | done | overdue
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-    # Relationships
-    lead = relationship("Lead", back_populates="followups")
-    user = relationship("User", back_populates="followups")
-
-
-# -------------------------
-# AuditLog Model
-# -------------------------
-class AuditLog(Base):
-    __tablename__ = "audit_logs"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    action = Column(String(255))
-    details = Column(JSON)
-    timestamp = Column(DateTime(timezone=True), server_default=func.now())
-
-    # Relationships
-    user = relationship("User", back_populates="audit_logs")
-
-
-# -------------------------
-# Indexes for performance
-# -------------------------
-Index("ix_leads_event_date", Lead.event_date)
-Index("ix_leads_stage", Lead.stage)
-Index("ix_leads_created_at", Lead.created_at)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    scheduled_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    lead_id: Mapped[int] = mapped_column(ForeignKey("leads.id"), nullable=False)
+    user_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    status: Mapped[str] = mapped_column(String(50), default="Pending")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

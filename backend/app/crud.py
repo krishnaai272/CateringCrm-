@@ -1,8 +1,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-
+from sqlalchemy import update, delete
 from . import models, schemas
-from .auth import get_password_hash
+from .auth import get_password_hash  # assuming you have this
+from typing import Optional
 import os
 
 # -------------------------
