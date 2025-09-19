@@ -6,6 +6,7 @@ from .. import crud, schemas, models
 from ..db import get_db
 from ..auth import verify_password
 from sqlalchemy import select
+from datetime import datetime
 
 router = APIRouter()
 
@@ -57,11 +58,24 @@ async def read_single_lead(lead_id: int, db: AsyncSession = Depends(get_db)):
     return db_lead
 
 @router.patch("/leads/{lead_id}", response_model=schemas.LeadReadSchema, tags=["Leads"])
-async def update_existing_lead(lead_id: int, lead: schemas.LeadUpdateSchema, db: AsyncSession = Depends(get_db)):
-    db_lead = await crud.update_lead(db=db, lead_id=lead_id, lead=lead)
-    if not db_lead:
+async def update_lead(lead_id: int, lead_update: schemas.LeadUpdateSchema, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(models.Lead).where(models.Lead.id == lead_id))
+    lead = result.scalars().first()
+
+    if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
-    return db_lead
+
+    update_data = lead_update.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(lead, key, value)
+
+    lead.updated_at = datetime.utcnow()  # ✅ update timestamp
+
+    db.add(lead)
+    await db.commit()
+    await db.refresh(lead)
+
+    return lead
 
 # -------------------------
 # ACTIVITY (NESTED UNDER LEADS)
@@ -102,24 +116,3 @@ async def delete_single_attachment(attachment_id: int, db: AsyncSession = Depend
         raise HTTPException(status_code=404, detail="Attachment not found")
     return {"message": "Attachment deleted successfully"}
 
-@router.put("/leads/{lead_id}", response_model=schemas.LeadReadSchema)
-async def update_lead(
-    lead_id: int,
-    lead_update: schemas.LeadUpdateSchema,
-    db: AsyncSession = Depends(get_db)
-):
-    result = await db.execute(select(models.Lead).where(models.Lead.id == lead_id))
-    lead = result.scalars().first()
-
-    if not lead:
-        raise HTTPException(status_code=404, detail="Lead not found")
-
-    update_data = lead_update.dict(exclude_unset=True)  # ✅ only update given fields
-    for key, value in update_data.items():
-        setattr(lead, key, value)
-
-    db.add(lead)
-    await db.commit()
-    await db.refresh(lead)
-
-    return lead
