@@ -23,15 +23,17 @@ app.include_router(v1.router, prefix="/api/v1")
 async def on_startup():
     print("--- Initializing database on startup ---")
 
-    # Create all tables (if not already present)
+    # Step 1: Create all tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     print("--- Tables are ready. ---")
 
-    # Open a session to check/create admin user
+    # ✅ Step 2: Open a NEW session for admin check
     async with async_session() as session:
         async with session.begin():
-            result = await session.execute(select(User).where(User.username == "admin"))
+            result = await session.execute(
+                select(User).where(User.username == "admin")
+            )
             existing_user = result.scalars().first()
 
             if not existing_user:
