@@ -9,6 +9,7 @@ from .db import Base  # your DeclarativeBase
 # -------------------------
 class Token(Base):
     __tablename__ = "tokens"
+    __table_args__ = {"extend_existing": True}
 
     id: Mapped[int] = mapped_column(primary_key=True)
     access_token: Mapped[str] = mapped_column(String(255))
@@ -19,6 +20,7 @@ class Token(Base):
 # -------------------------
 class User(Base):
     __tablename__ = "users"
+    __table_args__ = {"extend_existing": True}
 
     id: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
@@ -33,6 +35,7 @@ class User(Base):
 # -------------------------
 class Lead(Base):
     __tablename__ = "leads"
+    __table_args__ = {"extend_existing": True}
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -54,6 +57,7 @@ class Lead(Base):
 # -------------------------
 class Activity(Base):
     __tablename__ = "activities"
+    __table_args__ = {"extend_existing": True}
 
     id: Mapped[int] = mapped_column(primary_key=True)
     type: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -68,6 +72,7 @@ class Activity(Base):
 # -------------------------
 class FollowUp(Base):
     __tablename__ = "followups"
+    __table_args__ = {"extend_existing": True}
 
     id: Mapped[int] = mapped_column(primary_key=True)
     scheduled_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
