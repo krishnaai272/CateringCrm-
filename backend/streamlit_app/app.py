@@ -10,7 +10,7 @@ import re
 # ==========================
 #API_URL = "http://127.0.0.1:8000/api/v1"
 
-API_URL = "https://cateringcrm.onrender.com/api/v1"
+API_URL = "https://catering-crm-api-new.onrender.com/api/v1"
 STAGES = ["New", "Contacted", "Proposal Sent", "Negotiation", "Closed - Won", "Closed - Lost"]
 STAGE_COLORS = {
     "New": "#007BFF",           # Blue
