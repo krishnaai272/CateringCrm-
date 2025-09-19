@@ -1,8 +1,9 @@
 from sqlalchemy import Column, Integer, String, Date, DateTime, Text, ForeignKey, JSON, Index
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship, declarative_base
+from .db import Base
 
-Base = declarative_base()
+
 
 
 # -------------------------
