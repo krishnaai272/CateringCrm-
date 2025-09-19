@@ -81,3 +81,13 @@ class FollowUp(Base):
     user_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     status: Mapped[str] = mapped_column(String(50), default="Pending")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class Attachment(Base):
+    __tablename__ = "attachments"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    file_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    file_path: Mapped[str] = mapped_column(String(500), nullable=False)
+    uploaded_by: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    uploaded_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
