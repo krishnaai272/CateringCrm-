@@ -7,8 +7,10 @@ from .db import Base
 # User Schemas
 # -------------------------
 class Token(Base):
+    __tablename__ = "tokens"
+    __allow_unmapped__ = True
+
     access_token: str
-    token_type: str
 
 class UserBase(Base):
     username: str
