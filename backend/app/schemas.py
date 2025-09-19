@@ -2,15 +2,19 @@ from datetime import date, datetime
 from typing import Optional, List
 from pydantic import BaseModel, EmailStr
 from .db import Base
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import String
+
+class Token(Base):
+    __tablename__ = "tokens"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    access_token: Mapped[str] = mapped_column(String(255))
 
 # -------------------------
 # User Schemas
 # -------------------------
-class Token(Base):
-    __tablename__ = "tokens"
-    __allow_unmapped__ = True
 
-    access_token: str
 
 class UserBase(Base):
     username: str
