@@ -5,6 +5,7 @@ from typing import List
 from .. import crud, schemas, models
 from ..db import get_db
 from ..auth import verify_password
+from sqlalchemy import select
 
 router = APIRouter()
 
@@ -100,3 +101,25 @@ async def delete_single_attachment(attachment_id: int, db: AsyncSession = Depend
     if not deleted_attachment:
         raise HTTPException(status_code=404, detail="Attachment not found")
     return {"message": "Attachment deleted successfully"}
+
+@router.put("/leads/{lead_id}", response_model=schemas.LeadReadSchema)
+async def update_lead(
+    lead_id: int,
+    lead_update: schemas.LeadUpdateSchema,
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(select(models.Lead).where(models.Lead.id == lead_id))
+    lead = result.scalars().first()
+
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    update_data = lead_update.dict(exclude_unset=True)  # ✅ only update given fields
+    for key, value in update_data.items():
+        setattr(lead, key, value)
+
+    db.add(lead)
+    await db.commit()
+    await db.refresh(lead)
+
+    return lead
