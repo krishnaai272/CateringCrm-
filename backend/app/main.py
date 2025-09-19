@@ -41,7 +41,7 @@ async def on_startup():
                 hashed_password = get_password_hash("admin123")
                 new_user = User(
                     username="admin",
-                    password_hash=hashed_password,
+                    password=hashed_password,
                     full_name="Admin User",
                     role="Admin"
                 )
