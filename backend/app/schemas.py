@@ -3,7 +3,8 @@ from typing import Optional, List
 from pydantic import BaseModel, EmailStr
 from .db import Base
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import String
+from sqlalchemy import String, Integer, DateTime, Date, Text, ForeignKey
+#from sqlalchemy import String
 
 
  
@@ -73,7 +74,7 @@ class FollowUp(Base):
 # Pydantic Schemas
 # -------------------------
 # Users
-class UserBaseSchema(BaseModel):
+class UserBaseSchema(Base):
     username: str
     full_name: Optional[str] = None
     role: Optional[str] = "Staff"
@@ -89,7 +90,7 @@ class UserReadSchema(UserBaseSchema):
         from_attributes = True
 
 # Leads
-class LeadBaseSchema(BaseModel):
+class LeadBaseSchema(Base):
     name: str
     phone: str
     email: Optional[EmailStr] = None
@@ -102,7 +103,7 @@ class LeadBaseSchema(BaseModel):
 class LeadCreateSchema(LeadBaseSchema):
     created_by: Optional[int] = None
 
-class LeadUpdateSchema(BaseModel):
+class LeadUpdateSchema(Base):
     name: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[EmailStr] = None
@@ -124,7 +125,7 @@ class LeadReadSchema(LeadBaseSchema):
         from_attributes = True
 
 # Activities
-class ActivityBaseSchema(BaseModel):
+class ActivityBaseSchema(Base):
     type: str
     content: Optional[str] = None
 
@@ -141,7 +142,7 @@ class ActivityReadSchema(ActivityBaseSchema):
         from_attributes = True
 
 # FollowUps
-class FollowUpBaseSchema(BaseModel):
+class FollowUpBaseSchema(Base):
     scheduled_at: datetime
     note: Optional[str] = None
 
