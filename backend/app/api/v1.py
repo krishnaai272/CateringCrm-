@@ -41,7 +41,7 @@ async def create_user(user: schemas.UserCreate, db: AsyncSession = Depends(get_d
         raise HTTPException(status_code=400, detail="Username already registered")
     return await crud.create_user(db=db, user=user)
 
-@router.get("/users/", response_model=List[schemas.UserRead], tags=["Users"])
+@router.get("/users/", response_model=List[schemas.UserReadSchema], tags=["Leads"])
 async def read_users(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)):
     return await crud.get_users(db, skip=skip, limit=limit)
 
