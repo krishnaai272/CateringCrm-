@@ -1,15 +1,16 @@
 from datetime import date, datetime
 from typing import Optional, List
 from pydantic import BaseModel, EmailStr
+from .db import Base
 
 # -------------------------
 # User Schemas
 # -------------------------
-class Token(BaseModel):
+class Token(Base):
     access_token: str
     token_type: str
 
-class UserBase(BaseModel):
+class UserBase(Base):
     username: str
     full_name: Optional[str] = None
     role: Optional[str] = "Staff"
@@ -27,7 +28,7 @@ class UserRead(UserBase):
 # -------------------------
 # Lead Schemas
 # -------------------------
-class LeadBase(BaseModel):
+class LeadBase(Base):
     name: str
     phone: str
     email: Optional[EmailStr] = None
@@ -40,7 +41,7 @@ class LeadBase(BaseModel):
 class LeadCreate(LeadBase):
     created_by: Optional[int] = None
 
-class LeadUpdate(BaseModel):
+class LeadUpdate(Base):
     name: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[EmailStr] = None
@@ -64,7 +65,7 @@ class LeadRead(LeadBase):
 # -------------------------
 # Activity Schemas
 # -------------------------
-class ActivityBase(BaseModel):
+class ActivityBase(Base):
     type: str
     content: Optional[str] = None
 
@@ -83,7 +84,7 @@ class ActivityRead(ActivityBase):
 # -------------------------
 # FollowUp Schemas
 # -------------------------
-class FollowUpBase(BaseModel):
+class FollowUpBase(Base):
     scheduled_at: datetime
     note: Optional[str] = None
 
