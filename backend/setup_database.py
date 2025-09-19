@@ -1,64 +1,56 @@
 import asyncio
 import os
-import sys
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import create_async_engine
-from passlib.context import CryptContext
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import text # Import text for raw SQL if needed
 
-# This allows the script to find your 'app' module
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
-
-from app.models import Base, User
-# --- THIS IS THE FIX ---
-# We import 'async_session', which is the correct name from your db.py file
-from app.db import async_session
-# --- END FIX ---
-
-# This script gets the database URL from the command line
-LIVE_DATABASE_URL = os.environ.get("LIVE_DATABASE_URL")
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-def get_password_hash(password):
-    return pwd_context.hash(password)
+# Assuming Base is imported from your models.
+# Adjust this import path as necessary based on your project structure.
+from app.models import Base 
 
 async def main():
-    if not LIVE_DATABASE_URL:
-        print("🔴 ERROR: LIVE_DATABASE_URL environment variable not set.")
+    db_url = os.environ.get("LIVE_DATABASE_URL")
+    if not db_url:
+        print("LIVE_DATABASE_URL environment variable not set.")
         return
 
     print("--- Connecting to LIVE database... ---")
-    engine = create_async_engine(LIVE_DATABASE_URL)
-    
+    # echo=True for more verbosity, useful for debugging SQL statements
+    engine = create_async_engine(db_url, echo=True) 
+
     async with engine.begin() as conn:
         print("--- Creating all tables (if they don't exist)... ---")
-        await conn.run_sync(Base.metadata.create_all)
-    print("--- Tables are ready. ---")
-    
-    # --- THIS IS THE OTHER PART OF THE FIX ---
-    # We re-bind the imported async_session to use the engine we just created for this script
-    async_session.configure(bind=engine)
-    # --- END FIX ---
-    
-    async with async_session() as session:
-        async with session.begin():
-            stmt = select(User).where(User.username == "admin")
-            result = await session.execute(stmt)
-            existing_user = result.scalars().first()
+        # Use checkfirst=True to avoid DuplicateTableError if tables/indexes already exist
+        await conn.run_sync(lambda sync_conn: Base.metadata.create_all(sync_conn, checkfirst=True))
+        print("--- Tables and indexes ensured to exist. ---")
 
-            if existing_user:
-                print(f"✅ User 'admin' already exists.")
-            else:
-                print("--- Admin user 'admin' not found, creating one... ---")
-                hashed_password = get_password_hash("admin123")
-                new_user = User(username="admin", password_hash=hashed_password, full_name="Admin User", role="Admin")
-                session.add(new_user)
-                await session.commit()
-                print("✅ Admin user created successfully!")
+    # Optional: Seed initial data or perform other setup tasks here
+    # For example, to create the admin user if it doesn't exist:
+    # async with AsyncSession(engine) as session:
+    #     # You'll need to define your User model and a way to check for existing users
+    #     from backend.app.models import User # Adjust import path for User model
+    #     from sqlalchemy import select
+    #     
+    #     existing_admin = await session.execute(select(User).filter_by(username='admin'))
+    #     if not existing_admin.scalar_one_or_none():
+    #         # Create admin user
+    #         # Ensure you have proper password hashing here, e.g., using bcrypt
+    #         # For demonstration, 'your_hashed_password' is a placeholder
+    #         admin_user = User(
+    #             username='admin', 
+    #             password_hash='your_hashed_password', # Replace with a properly hashed password
+    #             full_name='Admin User', 
+    #             role='admin'
+    #         )
+    #         session.add(admin_user)
+    #         await session.commit()
+    #         print("Admin user created.")
+    #     else:
+    #         print("Admin user already exists.")
 
+    # Dispose of the engine to close all connections in the pool
     await engine.dispose()
-    print("\n✅ Database setup is complete! You can now log in.")
+    print("--- Database setup complete. ---")
 
 if __name__ == "__main__":
-    if os.name == 'nt':
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     asyncio.run(main())
