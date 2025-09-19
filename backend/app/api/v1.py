@@ -56,21 +56,19 @@ async def read_single_lead(lead_id: int, db: AsyncSession = Depends(get_db)):
     if not db_lead:
         raise HTTPException(status_code=404, detail="Lead not found")
     return db_lead
+@router.patch("/leads/{lead_id}/stage", response_model=schemas.LeadReadSchema, tags=["Leads"])
+async def update_lead_stage(lead_id: int, payload: dict, db: AsyncSession = Depends(get_db)):
+    new_stage = payload.get("stage")
+    if not new_stage:
+        raise HTTPException(status_code=400, detail="Stage is required")
 
-@router.patch("/leads/{lead_id}", response_model=schemas.LeadReadSchema, tags=["Leads"])
-async def update_lead(lead_id: int, lead_update: schemas.LeadUpdateSchema, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(models.Lead).where(models.Lead.id == lead_id))
     lead = result.scalars().first()
-
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
 
-    update_data = lead_update.dict(exclude_unset=True)
-    for key, value in update_data.items():
-        setattr(lead, key, value)
-
-    lead.updated_at = datetime.utcnow()  # ✅ update timestamp
-
+    lead.stage = new_stage
+    lead.updated_at = datetime.utcnow()
     db.add(lead)
     await db.commit()
     await db.refresh(lead)
