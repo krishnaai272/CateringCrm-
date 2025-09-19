@@ -5,6 +5,13 @@ from pydantic import BaseModel, EmailStr
 # -------------------------
 # Users
 # -------------------------
+
+class TokenSchema(BaseModel):
+    access_token: str
+
+    class Config:
+        from_attributes = True  # allows reading from SQLAlchemy models if needed
+
 class UserBaseSchema(BaseModel):
     username: str
     full_name: Optional[str] = None
